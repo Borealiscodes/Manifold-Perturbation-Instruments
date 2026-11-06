@@ -9,6 +9,7 @@ import numpy as np
 from core import CONFIG
 from core.tier1_vector_fields import BoundedVectorFieldPerturber
 from core.tier2_lie_evolution import SymmetricLieEvolutionEngine
+from core.tier3_gateaux_variation import GateauxSusceptibilityEngine
 
 
 class TestManifoldPerturbationContinuum(unittest.TestCase):
@@ -23,6 +24,7 @@ class TestManifoldPerturbationContinuum(unittest.TestCase):
         # Initialize engines
         self.perturber = BoundedVectorFieldPerturber(dimension=self.dim)
         self.lie_engine = SymmetricLieEvolutionEngine(dimension=self.dim)
+        self.gateaux_engine = GateauxSusceptibilityEngine(dimension=self.dim)
 
     def test_tier1_safe_containment(self):
         """
@@ -66,19 +68,15 @@ class TestManifoldPerturbationContinuum(unittest.TestCase):
         Assert that the Lie evolution engine strictly preserves metric tensor symmetry
         even when processed with completely non-symmetric gradient inputs.
         """
-        # Instantiate flat baseline metric (Identity)
         g0 = np.eye(self.dim)
         
-        # Create non-symmetric tensor arrays to simulate chaotic runtime inputs
-        np.random.seed(42) # Lock seed for deterministic testing paths
+        np.random.seed(42)
         ricci_asymmetric = np.random.rand(self.dim, self.dim)
         gradient_asymmetric = np.random.rand(self.dim, self.dim)
         forcing_asymmetric = np.random.rand(self.dim, self.dim)
         
-        # Verify inputs are truly asymmetric before running through the engine
         self.assertFalse(np.allclose(gradient_asymmetric, gradient_asymmetric.T))
         
-        # Run forward temporal step computation
         g_next = self.lie_engine.compute_metric_evolution_step(
             base_metric=g0,
             ricci_tensor=ricci_asymmetric,
@@ -87,8 +85,25 @@ class TestManifoldPerturbationContinuum(unittest.TestCase):
             dt=0.01
         )
         
-        # Assertion Gate: The resulting manifold state MUST be perfectly symmetric
         np.testing.assert_array_almost_equal(g_next, g_next.T, decimal=12)
+
+    def test_tier3_gateaux_linearity(self):
+        """
+        Assert that the directional derivative scales homogeneously along the
+        variation vector path field: S(V)[2 * dV] == 2 * S(V)[dV]
+        """
+        g0 = np.eye(self.dim)
+        V = np.array([1.0, -0.5, 0.2, 0.8])
+        delta_V = np.array([0.1, 0.4, -0.2, 0.3])
+        
+        # Compute baseline variation tensor
+        S_base = self.gateaux_engine.compute_susceptibility_tensor(g0, V, delta_V)
+        
+        # Compute variation tensor along scaled direction path (2.0 * delta_V)
+        S_scaled = self.gateaux_engine.compute_susceptibility_tensor(g0, V, 2.0 * delta_V)
+        
+        # Verify first-order directional homogeneity properties
+        np.testing.assert_array_almost_equal(S_scaled, 2.0 * S_base, decimal=5)
 
 
 if __name__ == "__main__":
