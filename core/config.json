@@ -1,0 +1,16 @@
+{
+  "geometric_bounds": {
+    "default_dimension": 4,
+    "gateaux_epsilon": 1e-6,
+    "stability_floor": 1e-5,
+    "clamping_envelope": 1e-12
+  },
+  "ricci_flow_coefficients": {
+    "alpha_susceptibility": 0.5,
+    "beta_forcing": 0.1
+  },
+  "holonomy_loop_parameters": {
+    "discretization_steps": 100,
+    "path_radius": 1.0
+  }
+}
