@@ -74,5 +74,5 @@ Use code with caution.
 📝 Provenance & Original Authorship
 
 This instrument toolkit is an original diagnostic platform developed to audit representation spaces.
-• Mathematical Authorship: All geometric operators, symmetric Lie evolution structures, infinite-dimensional Gâteaux susceptibility variations, and path-ordered holonomy drift formulations contained in this repository are original derivations authored entirely by Borealis S. Hedling (NDH-RESEARCH-PILOT).
-• Workspace Independence: This repository functions as an independent diagnostic sandbox. It operates outside the scope of external project teams, public interest foundations, or independent systems engineers. All implementation choices, software design, and analytical parameters are the sole work and responsibility of the repository author.
+* Mathematical Authorship: All geometric operators, symmetric Lie evolution structures, infinite-dimensional Gâteaux susceptibility variations, and path-ordered holonomy drift formulations contained in this repository are original derivations authored entirely by Borealis S. Hedling (NDH-RESEARCH-PILOT).
+* Workspace Independence: This repository functions as an independent diagnostic sandbox. It operates outside the scope of external project teams, public interest foundations, or independent systems engineers. All implementation choices, software design, and analytical parameters are the sole work and responsibility of the repository author.
