@@ -10,6 +10,7 @@ from core import CONFIG
 from core.tier1_vector_fields import BoundedVectorFieldPerturber
 from core.tier2_lie_evolution import SymmetricLieEvolutionEngine
 from core.tier3_gateaux_variation import GateauxSusceptibilityEngine
+from core.tier4_holonomy_drift import HolonomyDriftEngine
 
 
 class TestManifoldPerturbationContinuum(unittest.TestCase):
@@ -21,18 +22,19 @@ class TestManifoldPerturbationContinuum(unittest.TestCase):
         self.dim = self.bounds["default_dimension"]
         self.stability_floor = self.bounds["stability_floor"]
         
-        # Initialize engines
+        # Initialize the complete four-tier engine suite
         self.perturber = BoundedVectorFieldPerturber(dimension=self.dim)
         self.lie_engine = SymmetricLieEvolutionEngine(dimension=self.dim)
         self.gateaux_engine = GateauxSusceptibilityEngine(dimension=self.dim)
+        self.holonomy_engine = HolonomyDriftEngine(dimension=self.dim)
 
     def test_tier1_safe_containment(self):
         """
         Assert that perturbations within the stability threshold pass intact.
         """
         base_state = np.zeros(self.dim)
-        target_direction = np.ones(self.dim) / np.sqrt(self.dim)  # Unit vector
-        alpha = 0.1  # Low magnitude alpha shift
+        target_direction = np.ones(self.dim) / np.sqrt(self.dim)
+        alpha = 0.1
 
         perturbed_state, boundary_intact = self.perturber.generate_directional_perturbation(
             base_state, target_direction, alpha
@@ -48,16 +50,14 @@ class TestManifoldPerturbationContinuum(unittest.TestCase):
         """
         base_state = np.zeros(self.dim)
         target_direction = np.ones(self.dim) / np.sqrt(self.dim)
-        alpha = 50.0  # Massive outlier alpha parameter
+        alpha = 50.0
 
         perturbed_state, boundary_intact = self.perturber.generate_directional_perturbation(
             base_state, target_direction, alpha
         )
 
-        # The system must safely intercept the boundary crash
         self.assertFalse(boundary_intact)
 
-        # The magnitude of the displacement vector must not breach the stability envelope limit
         displacement_magnitude = np.linalg.norm(perturbed_state - base_state)
         D_max = self.perturber.calculate_stability_scalar(base_state)
         
@@ -96,14 +96,27 @@ class TestManifoldPerturbationContinuum(unittest.TestCase):
         V = np.array([1.0, -0.5, 0.2, 0.8])
         delta_V = np.array([0.1, 0.4, -0.2, 0.3])
         
-        # Compute baseline variation tensor
         S_base = self.gateaux_engine.compute_susceptibility_tensor(g0, V, delta_V)
-        
-        # Compute variation tensor along scaled direction path (2.0 * delta_V)
         S_scaled = self.gateaux_engine.compute_susceptibility_tensor(g0, V, 2.0 * delta_V)
         
-        # Verify first-order directional homogeneity properties
         np.testing.assert_array_almost_equal(S_scaled, 2.0 * S_base, decimal=5)
+
+    def test_tier4_holonomy_closure_and_determinism(self):
+        """
+        Assert that the path-ordered exponential engine computes a deterministic
+        asymmetry matrix and that the operator stays real-valued.
+        """
+        H1 = self.holonomy_engine.compute_loop_holonomy()
+        H2 = self.holonomy_engine.compute_loop_holonomy()
+        
+        # Verify determinism across discrete integration cycles
+        np.testing.assert_array_equal(H1, H2)
+        
+        # Confirm that the resulting matrix contains purely real entries
+        self.assertTrue(np.isrealobj(H1))
+        
+        # Assert that the determinant remains positive (no axis inversions)
+        self.assertGreater(np.linalg.det(H1), 0.0)
 
 
 if __name__ == "__main__":
